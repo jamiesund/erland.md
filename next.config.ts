@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async rewrites() {
+    return [{ source: "/jamiesunderland.md", destination: "/api/markdown" }];
+  },
 };
 
 export default nextConfig;
