@@ -155,8 +155,8 @@ export function FeedbackForm({ onSent }: { onSent?: () => void }) {
             key={option.label}
             className={[
               "pill tool feedback-option",
-              option.tone === "positive" ? "is-positive" : "",
-              option.tone === "negative" ? "is-negative" : "",
+              "tone" in option && option.tone === "positive" ? "is-positive" : "",
+              "tone" in option && option.tone === "negative" ? "is-negative" : "",
               choices.includes(option.label) ? "is-selected" : "",
             ]
               .filter(Boolean)

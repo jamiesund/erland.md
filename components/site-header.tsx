@@ -19,7 +19,7 @@ export function useMarkdownCopy(markdown: string, pageRef: RefObject<HTMLElement
     const frame = window.requestAnimationFrame(() => {
       pageRef.current?.querySelectorAll(".copy").forEach((node) => {
         node.getAnimations().forEach((animation) => {
-          if (animation.animationName !== "ring-angle") return;
+          if (!(animation instanceof CSSAnimation) || animation.animationName !== "ring-angle") return;
           animation.cancel();
           animation.play();
         });
