@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DotsIcon } from "@/components/icons";
+import { MarkdownSelectionMenu } from "@/components/selection-menu";
 import { CopyControl, SiteHeader, useMarkdownCopy, COPIED_HOLD_MS, BANNER_EXIT_MS } from "@/components/site-header";
 
 const showTimingTuner = false;
@@ -44,19 +45,31 @@ const HEADLINES = [
 ];
 
 export function HomeExperience({ markdown }: { markdown: string }) {
-  const [headlineIndex, setHeadlineIndex] = useState<number | null>(null);
+  const [headlineIndex, setHeadlineIndex] = useState<number | null>(0);
   const [headlinePhase, setHeadlinePhase] = useState<"shown" | "leaving">("shown");
-  const [typing, setTyping] = useState(true);
+  const [typing, setTyping] = useState(false);
+  const [firstEnter, setFirstEnter] = useState(false);
   const [timing, setTiming] = useState<Timing>(DEFAULT_TIMING);
   const resolvedTiming = useMemo(() => resolveTiming(timing), [timing]);
   const [cycle, setCycle] = useState(0);
   const timingRef = useRef(timing);
   const pageRef = useRef<HTMLDivElement>(null);
-  const { copied, ringing, copyError, copyFile, showNote } = useMarkdownCopy(markdown, pageRef);
+  const { copied, ringing, copyError, copyFile, confirmCopy, showNote } = useMarkdownCopy(markdown, pageRef);
   const copyBarRef = useRef<HTMLDivElement>(null);
+  const linesRef = useRef<HTMLDivElement>(null);
   const [copyPinned, setCopyPinned] = useState(false);
+  const [headerPinned, setHeaderPinned] = useState(false);
   const lines = markdown.replace(/\n$/, "").split("\n");
   timingRef.current = resolvedTiming;
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setFirstEnter(true);
+      return;
+    }
+    const frame = requestAnimationFrame(() => setFirstEnter(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     const bar = copyBarRef.current;
@@ -71,6 +84,11 @@ export function HomeExperience({ markdown }: { markdown: string }) {
       setCopyPinned((pinned) => {
         if (hidden) return false;
         return pinned ? bottom < 48 : bottom < 0;
+      });
+      setHeaderPinned((pinned) => {
+        if (!hidden) return false;
+        const y = window.scrollY;
+        return pinned ? y > 8 : y > 56;
       });
     };
     const onResize = () => {
@@ -221,18 +239,10 @@ export function HomeExperience({ markdown }: { markdown: string }) {
     };
 
     if (cycle === 0) {
-      if (reduceMotion) {
-        cutTyping();
-        setHeadlineIndex(0);
-        setHeadlinePhase("shown");
-        pause(0);
-      } else {
-        runTypingIntoHeadline(timingRef.current.lead / 2, 0, () => {
-          setHeadlineIndex(0);
-          setHeadlinePhase("shown");
-          pause(timingRef.current.enter);
-        });
-      }
+      cutTyping();
+      setHeadlineIndex(0);
+      setHeadlinePhase("shown");
+      pause(reduceMotion ? 0 : timingRef.current.enter);
     } else {
       setHeadlineIndex((index) => index ?? 0);
       setHeadlinePhase("shown");
@@ -301,7 +311,13 @@ export function HomeExperience({ markdown }: { markdown: string }) {
           <h1 aria-hidden={headlineIndex === null}>
             {HEADLINES.map((headline, index) => {
               const isCurrent = index === headlineIndex;
-              const className = !isCurrent ? "headline" : headlinePhase === "leaving" ? "headline is-leaving" : "headline is-active";
+              const className = !isCurrent
+                ? "headline"
+                : headlinePhase === "leaving"
+                  ? "headline is-leaving"
+                  : index === 0 && !firstEnter
+                    ? "headline"
+                    : "headline is-active";
 
               return (
                 <span key={index} className={className} aria-hidden={!isCurrent}>
@@ -350,7 +366,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
       </div>
 
       <section className="markdown" aria-label="Markdown file">
-        <div className="shell lines">
+        <div className="shell lines" ref={linesRef}>
           {lines.map((line, index) => (
             <div className="line" key={index}>
               <span className="num">{index + 1}</span>
@@ -359,6 +375,16 @@ export function HomeExperience({ markdown }: { markdown: string }) {
           ))}
         </div>
       </section>
+      <MarkdownSelectionMenu containerRef={linesRef} onCopied={confirmCopy} />
+      <button
+        className={copyPinned || headerPinned ? "back-top is-visible" : "back-top"}
+        type="button"
+        onClick={scrollToTop}
+        aria-hidden={!(copyPinned || headerPinned)}
+        inert={!(copyPinned || headerPinned)}
+      >
+        Back to top
+      </button>
       {showTimingTuner ? (
         <TimingTuner
           timing={resolvedTiming}

@@ -10,6 +10,7 @@ export const BANNER_EXIT_MS = 400;
 
 export function useMarkdownCopy(markdown: string, pageRef: RefObject<HTMLElement | null>) {
   const [copied, setCopied] = useState(false);
+  const [noteId, setNoteId] = useState(0);
   const [ringing, setRinging] = useState(false);
   const [copyError, setCopyError] = useState(false);
 
@@ -30,7 +31,7 @@ export function useMarkdownCopy(markdown: string, pageRef: RefObject<HTMLElement
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timer);
     };
-  }, [copied, pageRef]);
+  }, [copied, noteId, pageRef]);
 
   useEffect(() => {
     if (copied || !ringing) return;
@@ -59,20 +60,30 @@ export function useMarkdownCopy(markdown: string, pageRef: RefObject<HTMLElement
     const legacy = document.execCommand("copy");
     area.remove();
     if (legacy) {
-      setCopied(true);
+      confirmCopy(true);
       return;
     }
 
     try {
       await navigator.clipboard.writeText(markdown);
-      setCopied(true);
+      confirmCopy(true);
     } catch {
-      setCopied(false);
-      setCopyError(true);
+      confirmCopy(false);
     }
   }
 
-  return { copied, ringing, copyError, copyFile, showNote: copied || copyError };
+  function confirmCopy(ok: boolean) {
+    if (!ok) {
+      setCopied(false);
+      setCopyError(true);
+      return;
+    }
+    setCopyError(false);
+    setCopied(true);
+    setNoteId((id) => id + 1);
+  }
+
+  return { copied, ringing, copyError, copyFile, confirmCopy, showNote: copied || copyError };
 }
 
 export function SiteHeader({

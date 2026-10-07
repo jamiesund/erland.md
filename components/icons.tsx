@@ -2,7 +2,7 @@ type IconProps = { className?: string };
 
 export function CheckIcon({ className }: IconProps) {
   return (
-    <svg className={className} width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+    <svg className={className} width="14" height="14" viewBox="1 1.3 12 12" aria-hidden="true">
       <path
         d="M3.5 8.255L5.852 10.5L10.5 4.083"
         fill="none"
@@ -105,6 +105,29 @@ export function TwitterIcon({ className }: IconProps) {
       <path
         d="M22 5.8c-.7.3-1.5.6-2.3.7.8-.5 1.5-1.3 1.8-2.2-.8.5-1.7.8-2.6 1-1.5-1.6-4.1-1.7-5.7-.2-1.1 1-1.5 2.5-1.1 3.9-3.2-.2-6.1-1.7-8-4.1-1 1.8-.5 4.1 1.2 5.2-.6 0-1.3-.2-1.8-.5 0 1.9 1.3 3.5 3.1 3.9-.6.1-1.1.2-1.7.1.5 1.6 2 2.7 3.7 2.8-1.7 1.3-3.8 1.9-5.9 1.7 1.8 1.1 3.9 1.8 6.1 1.8 7.4 0 11.5-6.2 11.2-11.6.8-.6 1.5-1.3 2-2.1z"
         fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function CloseIcon({ className }: IconProps) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6.25 6.25L17.75 17.75M17.75 6.25L6.25 17.75" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function ChevronIcon({ className }: IconProps) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M9.5 18.25L15.75 12L9.5 5.75"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

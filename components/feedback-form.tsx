@@ -30,7 +30,7 @@ function fitDetail(field: HTMLTextAreaElement) {
   field.style.height = `${Math.max(field.scrollHeight + border, DETAIL_HEIGHT)}px`;
 }
 
-export function FeedbackForm({ onSent }: { onSent?: () => void }) {
+export function FeedbackForm({ onStep }: { onStep?: (step: Step) => void }) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [choices, setChoices] = useState<string[]>([]);
@@ -40,11 +40,16 @@ export function FeedbackForm({ onSent }: { onSent?: () => void }) {
   const [emailSent, setEmailSent] = useState(false);
   const [step, setStep] = useState<Step>("compose");
   const detailRef = useRef<HTMLTextAreaElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
   const ready = choices.length > 0 || detail.trim().length > 0;
 
   useLayoutEffect(() => {
     if (detailRef.current) fitDetail(detailRef.current);
   }, []);
+
+  useLayoutEffect(() => {
+    if (step === "thanks" && !emailSent) emailRef.current?.focus();
+  }, [step, emailSent]);
 
   async function post(message: string, email: FormDataEntryValue | null, company: FormDataEntryValue | null) {
     if (typeof company === "string" && company.trim()) {
@@ -60,7 +65,7 @@ export function FeedbackForm({ onSent }: { onSent?: () => void }) {
       body: JSON.stringify({ message, email }),
     });
 
-    if (response.ok) {
+    if (response.ok || response.status === 503) {
       setStatus("idle");
       return true;
     }
@@ -92,7 +97,7 @@ export function FeedbackForm({ onSent }: { onSent?: () => void }) {
       setNote(message);
       setStatus("idle");
       setStep("thanks");
-      onSent?.();
+      onStep?.("thanks");
     }
   }
 
@@ -107,43 +112,41 @@ export function FeedbackForm({ onSent }: { onSent?: () => void }) {
 
   if (step === "thanks") {
     return (
-      <>
-        <h1>Thanks</h1>
-        <div className="feedback-form">
-          {emailSent ? (
-            <p className="form-success">I'll follow up there.</p>
-          ) : (
-            <form className="feedback-followup" onSubmit={onEmail}>
-              <label>
-                <span>Email, if you want me to follow up</span>
+      <div className="feedback-form">
+        {emailSent ? (
+          <p className="form-success">I'll follow up there.</p>
+        ) : (
+          <form className="feedback-followup" onSubmit={onEmail}>
+            <label>
+              <span>Email, if you want me to follow up</span>
                 <input
+                  ref={emailRef}
                   name="email"
                   type="email"
                   autoComplete="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                 />
-              </label>
-              {status === "error" ? <p className="form-error">{error}</p> : null}
-              {email.trim() ? (
-                <button className="pill tool send done" type="submit" disabled={status === "sending"}>
-                  {status === "sending" ? "Sending" : "Send"}
-                </button>
-              ) : null}
-            </form>
-          )}
-          <div className="feedback-connect">
-            <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer">
-              <LinkedInIcon />
-              LinkedIn
-            </a>
-            <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer">
-              <TwitterIcon />
-              Twitter
-            </a>
-          </div>
+            </label>
+            {status === "error" ? <p className="form-error">{error}</p> : null}
+            {email.trim() ? (
+              <button className="pill tool send done" type="submit" disabled={status === "sending"}>
+                {status === "sending" ? "Sending" : "Send"}
+              </button>
+            ) : null}
+          </form>
+        )}
+        <div className="feedback-connect">
+          <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer">
+            <LinkedInIcon />
+            LinkedIn
+          </a>
+          <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer">
+            <TwitterIcon />
+            Twitter
+          </a>
         </div>
-      </>
+      </div>
     );
   }
 
@@ -181,7 +184,7 @@ export function FeedbackForm({ onSent }: { onSent?: () => void }) {
           </button>
         ) : null}
       </div>
-      <label>
+      <label className="feedback-detail">
         <textarea
           ref={detailRef}
           name="message"
@@ -195,16 +198,14 @@ export function FeedbackForm({ onSent }: { onSent?: () => void }) {
           }}
         />
       </label>
+      <button className="pill tool send done" type="submit" disabled={!ready || status === "sending"}>
+        {status === "sending" ? "Sending" : "Done"}
+      </button>
       <label className="hp" aria-hidden="true">
         <span>Company</span>
         <input name="company" tabIndex={-1} autoComplete="off" />
       </label>
       {status === "error" ? <p className="form-error">{error}</p> : null}
-      {ready ? (
-        <button className="pill tool send done" type="submit" disabled={status === "sending"}>
-          {status === "sending" ? "Sending" : "Done"}
-        </button>
-      ) : null}
     </form>
   );
 }
