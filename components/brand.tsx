@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { markFeedbackHandoff } from "@/components/feedback-modal";
 import { ChevronIcon, CloseIcon } from "@/components/icons";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState, type MouseEvent } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 
 const RELEASES = [
   {
@@ -52,9 +53,72 @@ export function useVersionLog() {
   return { pressed, open, openLog, closeLog };
 }
 
+const VersionLogContext = createContext<ReturnType<typeof useVersionLog> | null>(null);
+
+export function VersionLogProvider({ children }: { children: ReactNode }) {
+  const log = useVersionLog();
+  return (
+    <VersionLogContext.Provider value={log}>
+      {children}
+      <VersionLog open={log.open} onClose={log.closeLog} />
+    </VersionLogContext.Provider>
+  );
+}
+
+function useSharedVersionLog() {
+  const log = useContext(VersionLogContext);
+  if (!log) throw new Error("VersionLogProvider is missing");
+  return log;
+}
+
+export function VersionButton() {
+  const { pressed, open, openLog } = useSharedVersionLog();
+
+  return (
+    <button
+      className={pressed ? "version is-pressed" : "version"}
+      type="button"
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      onClick={openLog}
+    >
+      <span>V1.0</span>
+    </button>
+  );
+}
+
+const HANDOFF_MS = 680;
+
 export function VersionLog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [leaving, setLeaving] = useState(false);
+  const leavingRef = useRef(false);
+
+  const closeTimer = useRef<number | null>(null);
+  const overflowBeforeLock = useRef<string | null>(null);
+
+  function handoff(event: MouseEvent<HTMLAnchorElement>) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    leavingRef.current = true;
+    setLeaving(true);
+    markFeedbackHandoff();
+  }
+
+  useEffect(() => {
+    if (!leaving || closeTimer.current) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null;
+      onClose();
+    }, reduceMotion ? 0 : HANDOFF_MS);
+  }, [leaving, onClose]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -64,22 +128,28 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
       if (event.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    const previousOverflow = document.body.style.overflow;
+    if (overflowBeforeLock.current === null) {
+      const current = document.body.style.overflow;
+      overflowBeforeLock.current = current === "hidden" ? "" : current;
+    }
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previousOverflow;
-      if (previous instanceof HTMLElement) previous.focus();
+      if (!document.querySelector(".feedback-backdrop")) {
+        document.body.style.overflow = overflowBeforeLock.current ?? "";
+        overflowBeforeLock.current = null;
+      }
+      if (!leavingRef.current && previous instanceof HTMLElement) previous.focus();
     };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div className="log-backdrop" onClick={onClose}>
+    <div className={leaving ? "log-backdrop is-leaving" : "log-backdrop"} onClick={onClose}>
       <div
         ref={dialogRef}
-        className="log"
+        className={leaving ? "log is-leaving" : "log"}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -110,10 +180,7 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
                 className="pill log-feedback"
                 href="/feedback"
                 scroll={false}
-                onClick={(event) => {
-                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-                  onClose();
-                }}
+                onClick={handoff}
               >
                 Give feedback
                 <ChevronIcon />
@@ -128,7 +195,6 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
 
 export function Brand() {
   const pathname = usePathname();
-  const { pressed, open, openLog, closeLog } = useVersionLog();
 
   function onBrandClick(event: MouseEvent<HTMLAnchorElement>) {
     if (pathname !== "/") return;
@@ -144,16 +210,7 @@ export function Brand() {
       <Link className="brand" href="/" onClick={onBrandClick}>
         <span>Jamiesunderland.md</span>
       </Link>
-      <button
-        className={pressed ? "version is-pressed" : "version"}
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={openLog}
-      >
-        <span>V1.0</span>
-      </button>
-      <VersionLog open={open} onClose={closeLog} />
+      <VersionButton />
     </span>
   );
 }

@@ -12,7 +12,7 @@ function withText(base: string) {
 
 export const socialLinks = {
   linkedin: "https://www.linkedin.com/in/jamiesun/",
-  twitter: "https://x.com/jamiesunderland",
+  twitter: "https://x.com/jamiesuperhands",
 };
 
 export const openLinks = {

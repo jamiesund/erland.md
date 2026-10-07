@@ -20,7 +20,7 @@ function limited(ip: string) {
 
 export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (limited(ip)) {
+  if (process.env.NODE_ENV !== "development" && limited(ip)) {
     return NextResponse.json({ error: "Too many notes. Try again later." }, { status: 429 });
   }
 

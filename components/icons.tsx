@@ -90,7 +90,7 @@ export function ResetIcon({ className }: IconProps) {
 
 export function LinkedInIcon({ className }: IconProps) {
   return (
-    <svg className={className} width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className={className} width="16" height="16" viewBox="-1.03 1 23 23" aria-hidden="true">
       <path
         d="M4.98 3.5C4.98 4.88 3.88 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM.5 8.5h4V24h-4V8.5zM8.5 8.5h3.8v2.1h.05c.53-1 1.84-2.1 3.79-2.1 4.05 0 4.8 2.67 4.8 6.14V24h-4v-7.65c0-1.82-.03-4.16-2.54-4.16-2.54 0-2.93 1.98-2.93 4.03V24h-4V8.5z"
         fill="currentColor"
@@ -99,11 +99,11 @@ export function LinkedInIcon({ className }: IconProps) {
   );
 }
 
-export function TwitterIcon({ className }: IconProps) {
+export function XIcon({ className }: IconProps) {
   return (
-    <svg className={className} width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className={className} width="16" height="16" viewBox="2.328 2.326 19.347 19.347" aria-hidden="true">
       <path
-        d="M22 5.8c-.7.3-1.5.6-2.3.7.8-.5 1.5-1.3 1.8-2.2-.8.5-1.7.8-2.6 1-1.5-1.6-4.1-1.7-5.7-.2-1.1 1-1.5 2.5-1.1 3.9-3.2-.2-6.1-1.7-8-4.1-1 1.8-.5 4.1 1.2 5.2-.6 0-1.3-.2-1.8-.5 0 1.9 1.3 3.5 3.1 3.9-.6.1-1.1.2-1.7.1.5 1.6 2 2.7 3.7 2.8-1.7 1.3-3.8 1.9-5.9 1.7 1.8 1.1 3.9 1.8 6.1 1.8 7.4 0 11.5-6.2 11.2-11.6.8-.6 1.5-1.3 2-2.1z"
+        d="M17.5652 3.25H20.5319L14.0505 10.6628L21.6753 20.75H15.7052L11.0291 14.6322L5.67867 20.75H2.71017L9.64264 12.8212L2.32812 3.25H8.44986L12.6766 8.84192L17.5652 3.25ZM16.524 18.9731H18.1679L7.55662 4.93359H5.79256L16.524 18.9731Z"
         fill="currentColor"
       />
     </svg>

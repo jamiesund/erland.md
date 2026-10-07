@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useLayoutEffect, useRef, useState } from "react";
-import { LinkedInIcon, ResetIcon, TwitterIcon } from "@/components/icons";
+import { FormEvent, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { CheckIcon, ChevronIcon, LinkedInIcon, ResetIcon, XIcon } from "@/components/icons";
 import { socialLinks } from "@/lib/links";
 
 const OPTIONS = [
@@ -21,8 +21,32 @@ const OPTIONS = [
 
 const DETAIL_HEIGHT = 81;
 
+function emailLooksRight(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 type Status = "idle" | "sending" | "error";
 type Step = "compose" | "thanks";
+
+export function useEmailPreview() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (process.env.NODE_ENV !== "development") return false;
+      const preview = new URLSearchParams(window.location.search).get("preview");
+      return preview === "email" || preview === "sent";
+    },
+    () => false,
+  );
+}
+
+function useSentPreview() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => process.env.NODE_ENV === "development" && new URLSearchParams(window.location.search).get("preview") === "sent",
+    () => false,
+  );
+}
 
 function fitDetail(field: HTMLTextAreaElement) {
   field.style.height = `${DETAIL_HEIGHT}px`;
@@ -30,7 +54,15 @@ function fitDetail(field: HTMLTextAreaElement) {
   field.style.height = `${Math.max(field.scrollHeight + border, DETAIL_HEIGHT)}px`;
 }
 
-export function FeedbackForm({ onStep }: { onStep?: (step: Step) => void }) {
+export function FeedbackForm({
+  onStep,
+  onClose,
+  onCelebrate,
+}: {
+  onStep?: (step: Step) => void;
+  onClose?: () => void;
+  onCelebrate?: () => void;
+}) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [choices, setChoices] = useState<string[]>([]);
@@ -41,15 +73,30 @@ export function FeedbackForm({ onStep }: { onStep?: (step: Step) => void }) {
   const [step, setStep] = useState<Step>("compose");
   const detailRef = useRef<HTMLTextAreaElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+  const emailPreview = useEmailPreview();
+  const sentPreview = useSentPreview();
+  const celebrated = useRef(false);
   const ready = choices.length > 0 || detail.trim().length > 0;
+
+  useEffect(() => {
+    if (!sentPreview || celebrated.current) return;
+    celebrated.current = true;
+    onCelebrate?.();
+  }, [sentPreview, onCelebrate]);
 
   useLayoutEffect(() => {
     if (detailRef.current) fitDetail(detailRef.current);
   }, []);
 
-  useLayoutEffect(() => {
-    if (step === "thanks" && !emailSent) emailRef.current?.focus();
-  }, [step, emailSent]);
+  useEffect(() => {
+    if (!(emailPreview || step === "thanks") || emailSent) return;
+    const field = emailRef.current;
+    if (!field) return;
+    const focusField = () => field.focus({ preventScroll: true });
+    focusField();
+    const frame = window.requestAnimationFrame(focusField);
+    return () => window.cancelAnimationFrame(frame);
+  }, [emailPreview, step, emailSent]);
 
   async function post(message: string, email: FormDataEntryValue | null, company: FormDataEntryValue | null) {
     if (typeof company === "string" && company.trim()) {
@@ -105,45 +152,80 @@ export function FeedbackForm({ onStep }: { onStep?: (step: Step) => void }) {
     event.preventDefault();
     const replyTo = email.trim();
     if (!replyTo) return;
+    if (!emailLooksRight(replyTo)) {
+      setStatus("error");
+      setError("That email doesn't look right.");
+      return;
+    }
 
     const sent = await post(note, replyTo, null);
-    if (sent) setEmailSent(true);
+    if (sent) {
+      setEmailSent(true);
+      if (!celebrated.current) {
+        celebrated.current = true;
+        onCelebrate?.();
+      }
+    }
   }
 
-  if (step === "thanks") {
+  if (emailPreview || step === "thanks") {
     return (
       <div className="feedback-form">
-        {emailSent ? (
-          <p className="form-success">I'll follow up there.</p>
+        {emailSent || sentPreview ? (
+          <div className="feedback-followup">
+            <div className="feedback-sent">
+              <p className="form-success">I'll follow up at {email || "jamie@example.com"}</p>
+              <button className="pill tool send done" type="button" onClick={onClose}>
+                <span>
+                  <CheckIcon />
+                  Done
+                </span>
+              </button>
+            </div>
+          </div>
         ) : (
-          <form className="feedback-followup" onSubmit={onEmail}>
+          <form className="feedback-followup" noValidate onSubmit={onEmail}>
             <label>
-              <span>Email, if you want me to follow up</span>
+              <span className={status === "error" ? "form-error" : undefined}>
+                {status === "error" ? error : "Want me to follow up?"}
+              </span>
+              <span className="email-field">
                 <input
                   ref={emailRef}
                   name="email"
                   type="email"
+                  autoFocus
                   autoComplete="email"
+                  placeholder="Enter your email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  aria-invalid={status === "error"}
+                  onChange={(event) => {
+                    setEmail(event.currentTarget.value);
+                    if (status === "error") {
+                      setStatus("idle");
+                      setError("");
+                    }
+                  }}
                 />
+                <button
+                  className={email.trim() ? "email-send is-ready" : "email-send"}
+                  type="submit"
+                  disabled={!email.trim() || status === "sending"}
+                  aria-label={status === "sending" ? "Sending" : "Send"}
+                >
+                  <ChevronIcon />
+                </button>
+              </span>
             </label>
-            {status === "error" ? <p className="form-error">{error}</p> : null}
-            {email.trim() ? (
-              <button className="pill tool send done" type="submit" disabled={status === "sending"}>
-                {status === "sending" ? "Sending" : "Send"}
-              </button>
-            ) : null}
           </form>
         )}
         <div className="feedback-connect">
-          <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer">
+          <h3>More on</h3>
+          <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
             <LinkedInIcon />
-            LinkedIn
           </a>
-          <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer">
-            <TwitterIcon />
-            Twitter
+          <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="X">
+            <XIcon />
           </a>
         </div>
       </div>

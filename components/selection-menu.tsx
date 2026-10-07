@@ -135,7 +135,16 @@ export function MarkdownSelectionMenu({
       if (event.button !== 0) return;
       const root = containerRef.current;
       const target = event.target;
-      if (!root || !(target instanceof Node) || !root.contains(target)) return;
+      if (!(target instanceof Node)) return;
+      if (menuRef.current?.contains(target)) return;
+      if (!root || !root.contains(target)) {
+        draggingRef.current = false;
+        pinRef.current = null;
+        setDragging(false);
+        setAnchor(null);
+        window.getSelection()?.removeAllRanges();
+        return;
+      }
       draggingRef.current = true;
       pinRef.current = null;
       setDragging(true);
