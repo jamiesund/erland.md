@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { DotsIcon } from "@/components/icons";
 import { MarkdownSelectionMenu } from "@/components/selection-menu";
 import { CopyControl, SiteHeader, useMarkdownCopy, COPIED_HOLD_MS, BANNER_EXIT_MS } from "@/components/site-header";
@@ -270,6 +270,25 @@ export function HomeExperience({ markdown }: { markdown: string }) {
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
+  function bounceAvatar(event: PointerEvent<HTMLElement>) {
+    if (event.button !== 0) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const node = event.currentTarget;
+    node.getAnimations().forEach((animation) => {
+      if (animation instanceof CSSAnimation) return;
+      animation.cancel();
+    });
+    node.animate(
+      [
+        { transform: "scale(1)" },
+        { transform: "scale(0.95)", offset: 0.34 },
+        { transform: "scale(1.028)", offset: 0.62 },
+        { transform: "scale(1)" },
+      ],
+      { duration: 460, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+    );
+  }
+
   function updateTiming(key: keyof Timing, value: number) {
     setTiming((current) => ({ ...current, [key]: value }));
   }
@@ -295,7 +314,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
       `}</style>
       <div className={copyPinned ? "scroll-nav is-visible" : "scroll-nav"} aria-hidden={!copyPinned} inert={!copyPinned}>
         <div className="shell scroll-nav-inner">
-          <button className="scroll-avatar" type="button" aria-label="Back to top" onClick={scrollToTop}>
+          <button className="scroll-avatar" type="button" aria-label="Back to top" onClick={scrollToTop} onPointerDown={bounceAvatar}>
             <Image src="/portrait.jpg" alt="" width={32} height={32} />
           </button>
           <button className="pill copy copy-wide" type="button" onClick={copyFile}>
@@ -326,7 +345,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
               );
             })}
           </h1>
-          <div className={typing ? "avatar is-typing" : "avatar"}>
+          <div className={typing ? "avatar is-typing" : "avatar"} onPointerDown={bounceAvatar}>
             <span className="avatar-ring" aria-hidden="true" />
             <Image
               src="/portrait.jpg"

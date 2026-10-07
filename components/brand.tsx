@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { markFeedbackHandoff } from "@/components/feedback-modal";
 import { ChevronIcon, CloseIcon } from "@/components/icons";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, type MouseEvent } from "react";
@@ -52,9 +53,27 @@ export function useVersionLog() {
   return { pressed, open, openLog, closeLog };
 }
 
+const HANDOFF_MS = 680;
+
 export function VersionLog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [leaving, setLeaving] = useState(false);
+  const leavingRef = useRef(false);
+
+  function handoff(event: MouseEvent<HTMLAnchorElement>) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    leavingRef.current = true;
+    setLeaving(true);
+    markFeedbackHandoff();
+  }
+
+  useEffect(() => {
+    if (!leaving) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timer = window.setTimeout(onClose, reduceMotion ? 0 : HANDOFF_MS);
+    return () => window.clearTimeout(timer);
+  }, [leaving, onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,18 +87,18 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previousOverflow;
-      if (previous instanceof HTMLElement) previous.focus();
+      if (!document.querySelector(".feedback-backdrop")) document.body.style.overflow = previousOverflow;
+      if (!leavingRef.current && previous instanceof HTMLElement) previous.focus();
     };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div className="log-backdrop" onClick={onClose}>
+    <div className={leaving ? "log-backdrop is-leaving" : "log-backdrop"} onClick={onClose}>
       <div
         ref={dialogRef}
-        className="log"
+        className={leaving ? "log is-leaving" : "log"}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -110,10 +129,7 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
                 className="pill log-feedback"
                 href="/feedback"
                 scroll={false}
-                onClick={(event) => {
-                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-                  onClose();
-                }}
+                onClick={handoff}
               >
                 Give feedback
                 <ChevronIcon />
