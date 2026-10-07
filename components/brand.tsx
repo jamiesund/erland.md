@@ -4,7 +4,7 @@ import Link from "next/link";
 import { markFeedbackHandoff } from "@/components/feedback-modal";
 import { ChevronIcon, CloseIcon } from "@/components/icons";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState, type MouseEvent } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
 
 const RELEASES = [
   {
@@ -53,6 +53,40 @@ export function useVersionLog() {
   return { pressed, open, openLog, closeLog };
 }
 
+const VersionLogContext = createContext<ReturnType<typeof useVersionLog> | null>(null);
+
+export function VersionLogProvider({ children }: { children: ReactNode }) {
+  const log = useVersionLog();
+  return (
+    <VersionLogContext.Provider value={log}>
+      {children}
+      <VersionLog open={log.open} onClose={log.closeLog} />
+    </VersionLogContext.Provider>
+  );
+}
+
+function useSharedVersionLog() {
+  const log = useContext(VersionLogContext);
+  if (!log) throw new Error("VersionLogProvider is missing");
+  return log;
+}
+
+export function VersionButton() {
+  const { pressed, open, openLog } = useSharedVersionLog();
+
+  return (
+    <button
+      className={pressed ? "version is-pressed" : "version"}
+      type="button"
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      onClick={openLog}
+    >
+      <span>V1.0</span>
+    </button>
+  );
+}
+
 const HANDOFF_MS = 680;
 
 export function VersionLog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -60,6 +94,9 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
   const dialogRef = useRef<HTMLDivElement>(null);
   const [leaving, setLeaving] = useState(false);
   const leavingRef = useRef(false);
+
+  const closeTimer = useRef<number | null>(null);
+  const overflowBeforeLock = useRef<string | null>(null);
 
   function handoff(event: MouseEvent<HTMLAnchorElement>) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -69,11 +106,19 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
   }
 
   useEffect(() => {
-    if (!leaving) return;
+    if (!leaving || closeTimer.current) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const timer = window.setTimeout(onClose, reduceMotion ? 0 : HANDOFF_MS);
-    return () => window.clearTimeout(timer);
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null;
+      onClose();
+    }, reduceMotion ? 0 : HANDOFF_MS);
   }, [leaving, onClose]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -83,11 +128,17 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
       if (event.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    const previousOverflow = document.body.style.overflow;
+    if (overflowBeforeLock.current === null) {
+      const current = document.body.style.overflow;
+      overflowBeforeLock.current = current === "hidden" ? "" : current;
+    }
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      if (!document.querySelector(".feedback-backdrop")) document.body.style.overflow = previousOverflow;
+      if (!document.querySelector(".feedback-backdrop")) {
+        document.body.style.overflow = overflowBeforeLock.current ?? "";
+        overflowBeforeLock.current = null;
+      }
       if (!leavingRef.current && previous instanceof HTMLElement) previous.focus();
     };
   }, [open, onClose]);
@@ -144,7 +195,6 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
 
 export function Brand() {
   const pathname = usePathname();
-  const { pressed, open, openLog, closeLog } = useVersionLog();
 
   function onBrandClick(event: MouseEvent<HTMLAnchorElement>) {
     if (pathname !== "/") return;
@@ -160,16 +210,7 @@ export function Brand() {
       <Link className="brand" href="/" onClick={onBrandClick}>
         <span>Jamiesunderland.md</span>
       </Link>
-      <button
-        className={pressed ? "version is-pressed" : "version"}
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={openLog}
-      >
-        <span>V1.0</span>
-      </button>
-      <VersionLog open={open} onClose={closeLog} />
+      <VersionButton />
     </span>
   );
 }

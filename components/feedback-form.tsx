@@ -54,7 +54,15 @@ function fitDetail(field: HTMLTextAreaElement) {
   field.style.height = `${Math.max(field.scrollHeight + border, DETAIL_HEIGHT)}px`;
 }
 
-export function FeedbackForm({ onStep, onClose }: { onStep?: (step: Step) => void; onClose?: () => void }) {
+export function FeedbackForm({
+  onStep,
+  onClose,
+  onCelebrate,
+}: {
+  onStep?: (step: Step) => void;
+  onClose?: () => void;
+  onCelebrate?: () => void;
+}) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [choices, setChoices] = useState<string[]>([]);
@@ -67,7 +75,14 @@ export function FeedbackForm({ onStep, onClose }: { onStep?: (step: Step) => voi
   const emailRef = useRef<HTMLInputElement>(null);
   const emailPreview = useEmailPreview();
   const sentPreview = useSentPreview();
+  const celebrated = useRef(false);
   const ready = choices.length > 0 || detail.trim().length > 0;
+
+  useEffect(() => {
+    if (!sentPreview || celebrated.current) return;
+    celebrated.current = true;
+    onCelebrate?.();
+  }, [sentPreview, onCelebrate]);
 
   useLayoutEffect(() => {
     if (detailRef.current) fitDetail(detailRef.current);
@@ -144,7 +159,13 @@ export function FeedbackForm({ onStep, onClose }: { onStep?: (step: Step) => voi
     }
 
     const sent = await post(note, replyTo, null);
-    if (sent) setEmailSent(true);
+    if (sent) {
+      setEmailSent(true);
+      if (!celebrated.current) {
+        celebrated.current = true;
+        onCelebrate?.();
+      }
+    }
   }
 
   if (emailPreview || step === "thanks") {
@@ -152,11 +173,15 @@ export function FeedbackForm({ onStep, onClose }: { onStep?: (step: Step) => voi
       <div className="feedback-form">
         {emailSent || sentPreview ? (
           <div className="feedback-followup">
-            <p className="form-success">I'll follow up at {email || "jamie@example.com"}</p>
-            <button className="pill tool send done" type="button" onClick={onClose}>
-              <CheckIcon />
-              Done
-            </button>
+            <div className="feedback-sent">
+              <p className="form-success">I'll follow up at {email || "jamie@example.com"}</p>
+              <button className="pill tool send done" type="button" onClick={onClose}>
+                <span>
+                  <CheckIcon />
+                  Done
+                </span>
+              </button>
+            </div>
           </div>
         ) : (
           <form className="feedback-followup" noValidate onSubmit={onEmail}>
@@ -197,7 +222,7 @@ export function FeedbackForm({ onStep, onClose }: { onStep?: (step: Step) => voi
         <div className="feedback-connect">
           <h3>More on</h3>
           <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-            <LinkedInIcon className="linkedin-icon" />
+            <LinkedInIcon />
           </a>
           <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="X">
             <XIcon />

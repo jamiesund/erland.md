@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AvatarCascade, noteAvatarResidue } from "@/components/avatar-cascade";
 import { FeedbackForm, useEmailPreview } from "@/components/feedback-form";
 import { CloseIcon } from "@/components/icons";
 
@@ -22,6 +23,7 @@ export function FeedbackModal() {
   const emailPreview = useEmailPreview();
   const [title, setTitle] = useState("What feedback do you have?");
   const [fromLog] = useState(consumeFeedbackHandoff);
+  const [celebrating, setCelebrating] = useState(false);
   const heading = emailPreview ? "Thanks for that" : title;
 
   function close() {
@@ -45,17 +47,17 @@ export function FeedbackModal() {
       if (event.key === "Escape") router.push("/", { scroll: false });
     };
     document.addEventListener("keydown", onKey);
-    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = "";
       if (previous instanceof HTMLElement) previous.focus();
     };
   }, [router]);
 
   return (
     <div className={fromLog ? "log-backdrop feedback-backdrop is-handoff" : "log-backdrop feedback-backdrop"} onClick={close}>
+      {celebrating ? <AvatarCascade /> : null}
       <div
         ref={dialogRef}
         className="feedback-modal"
@@ -73,6 +75,10 @@ export function FeedbackModal() {
         </div>
         <FeedbackForm
           onClose={close}
+          onCelebrate={() => {
+            setCelebrating(true);
+            noteAvatarResidue("email");
+          }}
           onStep={(step) => setTitle(step === "thanks" ? "Thanks for that" : "What feedback do you have?")}
         />
       </div>

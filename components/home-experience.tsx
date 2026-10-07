@@ -1,11 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import { DotsIcon } from "@/components/icons";
+import { AvatarField, AvatarResidue, releaseOneAvatar, useAvatarResidue } from "@/components/avatar-cascade";
+import { NestEgg, useNestHold } from "@/components/nest-egg";
+import { ChevronIcon, DotsIcon, LinkedInIcon, XIcon } from "@/components/icons";
+import { socialLinks } from "@/lib/links";
 import { MarkdownSelectionMenu } from "@/components/selection-menu";
+import { VersionButton, VersionLogProvider } from "@/components/brand";
 import { CopyControl, SiteHeader, useMarkdownCopy, COPIED_HOLD_MS, BANNER_EXIT_MS } from "@/components/site-header";
 
+const LINE_CAP = 99;
 const showTimingTuner = false;
 const DEFAULT_TIMING = {
   hold: 800,
@@ -56,10 +62,19 @@ export function HomeExperience({ markdown }: { markdown: string }) {
   const pageRef = useRef<HTMLDivElement>(null);
   const { copied, ringing, copyError, copyFile, confirmCopy, showNote } = useMarkdownCopy(markdown, pageRef);
   const copyBarRef = useRef<HTMLDivElement>(null);
+  const pageEndRef = useRef<HTMLDivElement>(null);
+  const floatBarRef = useRef<HTMLDivElement>(null);
   const linesRef = useRef<HTMLDivElement>(null);
   const [copyPinned, setCopyPinned] = useState(false);
   const [headerPinned, setHeaderPinned] = useState(false);
+  const residue = useAvatarResidue();
+  const nest = useNestHold();
   const lines = markdown.replace(/\n$/, "").split("\n");
+  const [showAll, setShowAll] = useState(false);
+  const canExpand = lines.length > LINE_CAP;
+  const hiddenCount = Math.max(lines.length - LINE_CAP, 0);
+  const headLines = canExpand ? lines.slice(0, LINE_CAP) : lines;
+  const restLines = canExpand ? lines.slice(LINE_CAP) : [];
   timingRef.current = resolvedTiming;
 
   useEffect(() => {
@@ -91,27 +106,77 @@ export function HomeExperience({ markdown }: { markdown: string }) {
         return pinned ? y > 8 : y > 56;
       });
     };
+    const dockFloatBar = () => {
+      const page = pageRef.current;
+      const row = pageEndRef.current;
+      const bar = floatBarRef.current;
+      if (!page || !row || !bar) return;
+      if (residue.length === 0 || window.matchMedia("(max-width: 800px)").matches) {
+        bar.classList.remove("is-docked");
+        bar.style.top = "";
+        delete bar.dataset.gap;
+        return;
+      }
+
+      const rowStyle = getComputedStyle(row);
+      const padTop = Number.parseFloat(rowStyle.paddingTop) || 0;
+      const padBottom = Number.parseFloat(rowStyle.paddingBottom) || 0;
+      const rowBox = row.getBoundingClientRect();
+      const contentHeight = rowBox.height - padTop - padBottom;
+      const line = rowBox.top + padTop + (contentHeight - bar.offsetHeight) / 2;
+
+      let gap = Number.parseFloat(bar.dataset.gap || "");
+      if (!Number.isFinite(gap)) {
+        const docked = bar.classList.contains("is-docked");
+        const parkedTop = bar.style.top;
+        if (docked) {
+          bar.classList.remove("is-docked");
+          bar.style.top = "";
+        }
+        gap = window.innerHeight - bar.getBoundingClientRect().bottom;
+        bar.dataset.gap = String(gap);
+        if (docked) {
+          bar.classList.add("is-docked");
+          bar.style.top = parkedTop;
+        }
+      }
+
+      const fixedTop = window.innerHeight - gap - bar.offsetHeight;
+      if (line >= fixedTop - 0.5) {
+        bar.classList.remove("is-docked");
+        bar.style.top = "";
+        return;
+      }
+
+      bar.classList.add("is-docked");
+      bar.style.top = `${line - page.getBoundingClientRect().top}px`;
+    };
     const onResize = () => {
       syncWidth();
+      floatBarRef.current?.removeAttribute("data-gap");
       update();
+      dockFloatBar();
     };
     syncWidth();
     update();
+    dockFloatBar();
     window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("scroll", dockFloatBar, { passive: true });
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("scroll", update);
+      window.removeEventListener("scroll", dockFloatBar);
       window.removeEventListener("resize", onResize);
       root.style.removeProperty("--page-width");
     };
-  }, []);
+  }, [residue.length, showAll]);
 
   useLayoutEffect(() => {
     if (!copyPinned) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const moves: [string, string, boolean][] = [
-      [".hero .avatar", ".scroll-avatar", true],
+      [".top .version", ".scroll-nav .version", true],
       [".copy-bar .copy-wide", ".scroll-nav .copy-wide", false],
     ];
 
@@ -138,6 +203,41 @@ export function HomeExperience({ markdown }: { markdown: string }) {
 
     return () => animations.forEach((animation) => animation.cancel());
   }, [copyPinned]);
+
+  useLayoutEffect(() => {
+    if (!(copyPinned || headerPinned)) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const from = document.querySelector<HTMLElement>(".hero .avatar");
+    const to = document.querySelector<HTMLElement>(".float-avatar");
+    if (!from || !to) return;
+
+    to.style.transform = "translateY(0)";
+    const start = from.getBoundingClientRect();
+    const end = to.getBoundingClientRect();
+    to.style.transform = "";
+    if (start.width === 0 || end.width === 0) return;
+
+    const dx = start.left + start.width / 2 - (end.left + end.width / 2);
+    const dy = start.top + start.height / 2 - (end.top + end.height / 2);
+    const scale = start.width / end.width;
+    const animation = to.animate(
+      [
+        {
+          transform: `translate(${dx}px, ${dy}px) scale(${scale})`,
+          opacity: 1,
+          easing: "cubic-bezier(0.45, 0, 0.8, 1)",
+        },
+        { transform: "translate(0px, 18px) scale(0.8)", opacity: 1, offset: 0.52, easing: "cubic-bezier(0.2, 0.9, 0.3, 1)" },
+        { transform: "translate(0px, -16px) scale(1.18)", opacity: 1, offset: 0.7, easing: "cubic-bezier(0.3, 0, 0.2, 1)" },
+        { transform: "translate(0px, 5px) scale(0.94)", opacity: 1, offset: 0.86 },
+        { transform: "translateY(0)", opacity: 1 },
+      ],
+      { duration: 880 },
+    );
+
+    return () => animation.cancel();
+  }, [copyPinned, headerPinned]);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -270,15 +370,26 @@ export function HomeExperience({ markdown }: { markdown: string }) {
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
-  function bounceAvatar(event: PointerEvent<HTMLElement>) {
-    if (event.button !== 0) return;
+  const avatarDrag = useRef<{ id: number; x: number; y: number; dragged: boolean } | null>(null);
+
+  function avatarPress(node: HTMLElement) {
+    return node.querySelector<HTMLElement>(".avatar-press") ?? node;
+  }
+
+  function cancelAvatarMotion(node: HTMLElement) {
+    const targets = new Set<HTMLElement>([node, avatarPress(node)]);
+    for (const target of targets) {
+      target.getAnimations().forEach((animation) => {
+        if (animation instanceof CSSAnimation) return;
+        animation.cancel();
+      });
+    }
+  }
+
+  function playAvatarBounce(node: HTMLElement) {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const node = event.currentTarget;
-    node.getAnimations().forEach((animation) => {
-      if (animation instanceof CSSAnimation) return;
-      animation.cancel();
-    });
-    node.animate(
+    cancelAvatarMotion(node);
+    avatarPress(node).animate(
       [
         { transform: "scale(1)" },
         { transform: "scale(0.95)", offset: 0.34 },
@@ -287,6 +398,70 @@ export function HomeExperience({ markdown }: { markdown: string }) {
       ],
       { duration: 460, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
     );
+  }
+
+  function onAvatarPointerDown(event: PointerEvent<HTMLElement>) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    nest.onPointerDown(event);
+    const node = event.currentTarget;
+    try {
+      node.setPointerCapture(event.pointerId);
+    } catch {
+      // The pointer can already be gone if the gesture ends immediately.
+    }
+    avatarDrag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, dragged: false };
+    playAvatarBounce(node);
+  }
+
+  function onAvatarPointerMove(event: PointerEvent<HTMLElement>) {
+    const drag = avatarDrag.current;
+    if (!drag || drag.id !== event.pointerId) return;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    const node = event.currentTarget;
+    if (!drag.dragged) {
+      if (dx * dx + dy * dy < 64) return;
+      drag.dragged = true;
+      nest.onPointerUp();
+      cancelAvatarMotion(node);
+      node.style.zIndex = "9";
+      releaseOneAvatar(node.getBoundingClientRect());
+    }
+    node.style.transform = `translate(${dx}px, ${dy}px)`;
+  }
+
+  function onAvatarPointerUp(event: PointerEvent<HTMLElement>) {
+    const drag = avatarDrag.current;
+    if (!drag || drag.id !== event.pointerId) return;
+    const node = event.currentTarget;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    avatarDrag.current = null;
+    nest.onPointerUp();
+    if (nest.consume()) {
+      node.style.transform = "";
+      node.style.zIndex = "";
+      return;
+    }
+    if (!drag.dragged) {
+      releaseOneAvatar(node.getBoundingClientRect());
+      return;
+    }
+    node.style.transform = "";
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      node.style.zIndex = "";
+      return;
+    }
+    const animation = node.animate(
+      [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0px, 0px)" }],
+      { duration: 480, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+    );
+    const clearLayer = () => {
+      node.style.zIndex = "";
+    };
+    animation.onfinish = clearLayer;
+    animation.oncancel = clearLayer;
   }
 
   function updateTiming(key: keyof Timing, value: number) {
@@ -299,6 +474,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
   const dotSettle = (dotPulse * 80).toFixed(2);
 
   return (
+    <VersionLogProvider>
     <div ref={pageRef} className={["page", copied ? "is-copied" : "", ringing ? "is-ringing" : ""].filter(Boolean).join(" ")}>
       <style>{`
         @keyframes typing-dot {
@@ -314,9 +490,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
       `}</style>
       <div className={copyPinned ? "scroll-nav is-visible" : "scroll-nav"} aria-hidden={!copyPinned} inert={!copyPinned}>
         <div className="shell scroll-nav-inner">
-          <button className="scroll-avatar" type="button" aria-label="Back to top" onClick={scrollToTop} onPointerDown={bounceAvatar}>
-            <Image src="/portrait.jpg" alt="" width={32} height={32} />
-          </button>
+          <VersionButton />
           <button className="pill copy copy-wide" type="button" onClick={copyFile}>
             <CopyControl copied={copied} />
           </button>
@@ -325,6 +499,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
 
       <SiteHeader copied={copied} copyError={copyError} showNote={showNote} onCopy={copyFile} />
 
+      <div className="intro">
       <section className="hero-band">
         <div className="shell hero">
           <h1 aria-hidden={headlineIndex === null}>
@@ -345,16 +520,37 @@ export function HomeExperience({ markdown }: { markdown: string }) {
               );
             })}
           </h1>
-          <div className={typing ? "avatar is-typing" : "avatar"} onPointerDown={bounceAvatar}>
-            <span className="avatar-ring" aria-hidden="true" />
-            <Image
-              src="/portrait.jpg"
-              alt="Jamie Sunderland"
-              width={88}
-              height={88}
-              priority
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+          <div
+            className={typing ? "avatar is-typing" : "avatar"}
+            role="button"
+            tabIndex={0}
+            aria-label="Jamie Sunderland"
+            onPointerDown={onAvatarPointerDown}
+            onPointerMove={onAvatarPointerMove}
+            onPointerUp={onAvatarPointerUp}
+            onPointerCancel={onAvatarPointerUp}
+            onDragStart={(event) => event.preventDefault()}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              releaseOneAvatar(event.currentTarget.getBoundingClientRect());
+              playAvatarBounce(event.currentTarget);
+            }}
+          >
+            <span className="avatar-photo">
+              <span className="avatar-press">
+                <span className="avatar-ring" aria-hidden="true" />
+                <Image
+                  src="/portrait.jpg"
+                  alt=""
+                  width={88}
+                  height={88}
+                  priority
+                  draggable={false}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              </span>
+            </span>
             <span className={typing ? "avatar-badge is-typing" : "avatar-badge"} aria-hidden="true">
               <DotsIcon />
             </span>
@@ -368,6 +564,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
             <CopyControl copied={copied} />
           </button>
         </div>
+      </div>
       </div>
 
       <div
@@ -386,15 +583,59 @@ export function HomeExperience({ markdown }: { markdown: string }) {
 
       <section className="markdown" aria-label="Markdown file">
         <div className="shell lines" ref={linesRef}>
-          {lines.map((line, index) => (
+          {headLines.map((line, index) => (
             <div className="line" key={index}>
               <span className="num">{index + 1}</span>
               <span className="code">{line || " "}</span>
             </div>
           ))}
+          {canExpand ? (
+            <div className={showAll ? "line-rest is-open" : "line-rest"}>
+              <div className="line-rest-grid">
+                <div className="line-rest-clip" aria-hidden={!showAll}>
+                  {restLines.map((line, index) => (
+                    <div className="line" key={LINE_CAP + index}>
+                      <span className="num">{LINE_CAP + 1 + index}</span>
+                      <span className="code">{line || " "}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {canExpand ? <hr className={showAll ? "log-rule file-rule" : "log-rule file-rule is-collapsed"} /> : null}
+          {canExpand ? (
+            <button
+              className={showAll ? "pill log-feedback show-all is-open" : "pill log-feedback show-all"}
+              type="button"
+              aria-label={showAll ? `Hide ${hiddenCount}` : `Show ${hiddenCount} more`}
+              onClick={() => setShowAll((open) => !open)}
+            >
+              {showAll ? `Hide ${hiddenCount}` : `${hiddenCount} more`}
+              <ChevronIcon />
+            </button>
+          ) : null}
+          {canExpand ? <hr className={showAll ? "log-rule file-rule is-collapsed" : "log-rule file-rule"} /> : null}
         </div>
       </section>
+      <div className={residue.length === 0 ? "shell page-end is-flush" : "shell page-end"} ref={pageEndRef}>
+        <Link className="pill log-feedback" href="/feedback" scroll={false}>
+          Give feedback
+          <ChevronIcon />
+        </Link>
+        <div className="feedback-connect">
+          <h3>More on</h3>
+          <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <LinkedInIcon />
+          </a>
+          <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="X">
+            <XIcon />
+          </a>
+        </div>
+      </div>
+      <AvatarResidue />
       <MarkdownSelectionMenu containerRef={linesRef} onCopied={confirmCopy} />
+      <div className="float-bar" ref={floatBarRef}>
       <button
         className={copyPinned || headerPinned ? "back-top is-visible" : "back-top"}
         type="button"
@@ -404,6 +645,30 @@ export function HomeExperience({ markdown }: { markdown: string }) {
       >
         Back to top
       </button>
+      <button
+        className={copyPinned || headerPinned ? "float-avatar is-visible" : "float-avatar"}
+        type="button"
+        aria-label="Jamie Sunderland"
+        aria-hidden={!(copyPinned || headerPinned)}
+        inert={!(copyPinned || headerPinned)}
+        onPointerDown={onAvatarPointerDown}
+        onPointerMove={onAvatarPointerMove}
+        onPointerUp={onAvatarPointerUp}
+        onPointerCancel={onAvatarPointerUp}
+        onDragStart={(event) => event.preventDefault()}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          releaseOneAvatar(event.currentTarget.getBoundingClientRect());
+          playAvatarBounce(event.currentTarget);
+        }}
+      >
+        <span className="avatar-press">
+          <span className="avatar-ring" aria-hidden="true" />
+          <Image src="/portrait.jpg" alt="" width={48} height={48} draggable={false} />
+        </span>
+      </button>
+      </div>
       {showTimingTuner ? (
         <TimingTuner
           timing={resolvedTiming}
@@ -415,7 +680,10 @@ export function HomeExperience({ markdown }: { markdown: string }) {
           }}
         />
       ) : null}
+      <AvatarField />
+      <NestEgg />
     </div>
+    </VersionLogProvider>
   );
 }
 
