@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 
 const ROUND_MS = 60_000;
 const HOLD_MS = 740;
@@ -402,7 +402,7 @@ export function NestEgg() {
             ]
               .filter(Boolean)
               .join(" ")}
-            style={{ "--score-color": scoreColor }}
+            style={{ "--score-color": scoreColor } as CSSProperties}
           >
             {score}
           </span>
@@ -421,17 +421,19 @@ export function NestEgg() {
             <span
               key={balloon.id}
               className="nest-balloon"
-              style={{
-                left: `${balloon.x}%`,
-                width: balloon.size,
-                height: balloon.size,
-                animationDuration: `${balloon.duration}ms`,
-                "--drift": `${balloon.drift}px`,
-                "--rot": `${balloon.rot}deg`,
-                "--rest": `${balloon.rest}%`,
-                "--point-color": pointColor(balloon.multiplier),
-                "--point-ink": pointInk(balloon.multiplier),
-              }}
+              style={
+                {
+                  left: `${balloon.x}%`,
+                  width: balloon.size,
+                  height: balloon.size,
+                  animationDuration: `${balloon.duration}ms`,
+                  "--drift": `${balloon.drift}px`,
+                  "--rot": `${balloon.rot}deg`,
+                  "--rest": `${balloon.rest}%`,
+                  "--point-color": pointColor(balloon.multiplier),
+                  "--point-ink": pointInk(balloon.multiplier),
+                } as CSSProperties
+              }
             >
               <button
                 className={balloon.popping ? "nest-balloon-face is-popping" : "nest-balloon-face"}
