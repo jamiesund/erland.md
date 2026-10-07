@@ -1684,6 +1684,10 @@ h1 {
   }
 }
 
+.feedback-followup .done {
+  align-self: flex-end;
+}
+
 .feedback-form .done:hover {
   background: #fff;
   border-color: #fff;
