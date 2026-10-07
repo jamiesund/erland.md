@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SiteAnalytics } from "@/components/analytics";
+import { SiteShell } from "@/components/site-shell";
+import { readMarkdownFile } from "@/lib/markdown";
 import "./globals.css";
 
 const inter = Inter({
@@ -41,10 +43,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const markdown = await readMarkdownFile();
+
   return (
     <html lang="en" className={inter.className}>
       <body>
+        <SiteShell markdown={markdown} />
         {children}
         <SiteAnalytics />
       </body>

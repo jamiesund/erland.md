@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.FEEDBACK_FROM ?? "Jamie Sunderland <feedback@jamiesunderland.md>",
+      from: process.env.FEEDBACK_FROM ?? "Jamie Sunderland <onboarding@resend.dev>",
       to: [TO],
       reply_to: replyTo,
       subject: "Feedback from jamiesunderland.md",
