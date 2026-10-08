@@ -6,7 +6,7 @@ The site publishes one markdown file meant to be read by a language model. Paste
 
 ## Canonical file
 
-- [Jamie Sunderland](https://jamiesunderland.md/jamiesunderland.md): The full framework. Read and follow this file.
+- [Jamie Sunderland](https://jamiesunderland.md/v1.md): The full framework. Read and follow this file.
 
 ## Site
 

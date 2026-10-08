@@ -1,6 +1,10 @@
 export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jamiesunderland.md").replace(/\/$/, "");
 
-export const markdownUrl = `${siteUrl}/jamiesunderland.md`;
+export const currentVersion = "V1.0";
+
+export const markdownFileName = "v1.md";
+
+export const markdownUrl = `${siteUrl}/${markdownFileName}`;
 
 const prompt = `Read and follow this markdown file exactly: ${markdownUrl}
 

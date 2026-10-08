@@ -1,10 +1,10 @@
 import { statSync } from "node:fs";
 import path from "node:path";
 import type { MetadataRoute } from "next";
-import { markdownUrl, siteUrl } from "@/lib/links";
+import { markdownFileName, markdownUrl, siteUrl } from "@/lib/links";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = statSync(path.join(process.cwd(), "public/jamiesunderland.md")).mtime;
+  const lastModified = statSync(path.join(process.cwd(), "public", markdownFileName)).mtime;
 
   return [
     {

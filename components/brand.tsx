@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { markFeedbackHandoff } from "@/components/feedback-modal";
 import { ChevronIcon, CloseIcon } from "@/components/icons";
+import { currentVersion } from "@/lib/links";
 import { lockPageScroll, unlockPageScroll } from "@/lib/scroll-lock";
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
-
-export const currentVersion = "V1.0";
 
 const RELEASES = [
   {
