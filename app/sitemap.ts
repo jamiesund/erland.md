@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
 import { markdownUrl, siteUrl } from "@/lib/links";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = statSync(path.join(process.cwd(), "content/jamiesunderland.md")).mtime;
+  const lastModified = statSync(path.join(process.cwd(), "public/jamiesunderland.md")).mtime;
 
   return [
     {
