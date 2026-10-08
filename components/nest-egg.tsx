@@ -194,12 +194,12 @@ export function NestEgg() {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key.length !== 1) return;
       const next = `${buffer}${event.key.toLowerCase()}`;
-      buffer = next === "e" || next === "eg" || next === "egg" ? next : event.key.toLowerCase() === "e" ? "e" : "";
+      buffer = "game".startsWith(next) ? next : event.key.toLowerCase() === "g" ? "g" : "";
       window.clearTimeout(reset);
       reset = window.setTimeout(() => {
         buffer = "";
       }, 1100);
-      if (buffer === "egg") {
+      if (buffer === "game") {
         buffer = "";
         open();
       }
