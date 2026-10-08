@@ -55,10 +55,13 @@ export function useMarkdownCopy(markdown: string, pageRef: RefObject<HTMLElement
     area.style.left = "0";
     area.style.opacity = "0";
     document.body.appendChild(area);
-    area.focus();
+    const x = window.scrollX;
+    const y = window.scrollY;
+    area.focus({ preventScroll: true });
     area.select();
     const legacy = document.execCommand("copy");
     area.remove();
+    if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
     if (legacy) {
       confirmCopy(true);
       return;

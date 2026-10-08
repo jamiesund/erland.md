@@ -3,20 +3,22 @@
 import Link from "next/link";
 import { markFeedbackHandoff } from "@/components/feedback-modal";
 import { ChevronIcon, CloseIcon } from "@/components/icons";
-import { usePathname } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { lockPageScroll, unlockPageScroll } from "@/lib/scroll-lock";
+import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+
+export const currentVersion = "V1.0";
 
 const RELEASES = [
   {
-    version: "V1.0",
-    date: "6 October 2026",
-    dateTime: "2026-10-06",
-    summary: "The first version of the file. Paste it into Claude, Cursor, or any chat and it has the context for working through a design problem.",
+    version: currentVersion,
+    date: "8 October 2026, 13:46",
+    dateTime: "2026-10-08T13:46",
+    summary: "This is all a bit of an experiment into markdown files. So a baby is born. Created from multiple conversations with Claude into how I think about design problems based on my experience. This version includes:",
     covers: [
-      "How to use the file, and how the chat should behave",
-      "Who I am, and how I think",
-      "How I work, from a sketch through to testing with real people",
-      "Scope, trust, and reciprocity",
+      "How the chat should open, listen, and stay honest about who it is",
+      "Questions that unlock thinking, and making space to sit with them",
+      "How I sketch, formalise, and test with real people",
+      "Scope, trust, and reciprocity, from what I've shipped",
     ],
   },
 ];
@@ -82,7 +84,7 @@ export function VersionButton() {
       aria-expanded={open}
       onClick={openLog}
     >
-      <span>V1.0</span>
+      <span>{currentVersion}</span>
     </button>
   );
 }
@@ -96,7 +98,6 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
   const leavingRef = useRef(false);
 
   const closeTimer = useRef<number | null>(null);
-  const overflowBeforeLock = useRef<string | null>(null);
 
   function handoff(event: MouseEvent<HTMLAnchorElement>) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -120,26 +121,25 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
     const previous = document.activeElement;
-    dialogRef.current?.focus();
+    const dialog = dialogRef.current;
+    dialog?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    if (overflowBeforeLock.current === null) {
-      const current = document.body.style.overflow;
-      overflowBeforeLock.current = current === "hidden" ? "" : current;
-    }
-    document.body.style.overflow = "hidden";
+    lockPageScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      if (!document.querySelector(".feedback-backdrop")) {
-        document.body.style.overflow = overflowBeforeLock.current ?? "";
-        overflowBeforeLock.current = null;
+      dialog?.setAttribute("aria-modal", "false");
+      if (document.activeElement instanceof HTMLElement && dialog?.contains(document.activeElement)) {
+        document.activeElement.blur();
       }
-      if (!leavingRef.current && previous instanceof HTMLElement) previous.focus();
+      unlockPageScroll();
+      const coarse = window.matchMedia("(pointer: coarse)").matches;
+      if (!leavingRef.current && !coarse && previous instanceof HTMLElement) previous.focus();
     };
   }, [open, onClose]);
 
@@ -194,23 +194,20 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
 }
 
 export function Brand() {
-  const pathname = usePathname();
-
-  function onBrandClick(event: MouseEvent<HTMLAnchorElement>) {
-    if (pathname !== "/") return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-
-    event.preventDefault();
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
-  }
+  const { pressed, open, openLog } = useSharedVersionLog();
 
   return (
-    <span className="brand-lockup">
-      <Link className="brand" href="/" onClick={onBrandClick}>
-        <span>Jamiesunderland.md</span>
-      </Link>
-      <VersionButton />
-    </span>
+    <button
+      className={pressed ? "brand-lockup is-pressed" : "brand-lockup"}
+      type="button"
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      onClick={openLog}
+    >
+      <span className="brand">Jamiesunderland.md</span>
+      <span className="version">
+        <span>{currentVersion}</span>
+      </span>
+    </button>
   );
 }

@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   if (typeof email === "string" && email.trim()) {
     const candidate = email.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) {
-      return NextResponse.json({ error: "That email doesn't look right." }, { status: 400 });
+      return NextResponse.json({ error: "Your email doesn't look right" }, { status: 400 });
     }
     replyTo = candidate;
   }

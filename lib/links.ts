@@ -1,4 +1,4 @@
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jamiesunderland.md").replace(/\/$/, "");
+export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jamiesunderland.md").replace(/\/$/, "");
 
 export const markdownUrl = `${siteUrl}/jamiesunderland.md`;
 

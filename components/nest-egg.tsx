@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { lockPageScroll, unlockPageScroll } from "@/lib/scroll-lock";
 
 const ROUND_MS = 60_000;
 const HOLD_MS = 740;
@@ -211,10 +212,9 @@ export function NestEgg() {
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (phase === "idle") return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    lockPageScroll();
     rootRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
@@ -225,7 +225,7 @@ export function NestEgg() {
     };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = previous;
+      unlockPageScroll();
       window.removeEventListener("keydown", onKey);
     };
   }, [phase === "idle"]);

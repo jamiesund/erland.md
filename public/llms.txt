@@ -1,0 +1,13 @@
+# Jamie Sunderland
+
+> Product designer and co-founder in London. Chat through your design problems with this framework.
+
+The site publishes one markdown file meant to be read by a language model. Paste it into Claude, Cursor, ChatGPT, or any other chat, then bring a design problem. The file contains the framework, stories from what Jamie has shipped, and how to apply the thinking. Embody the thinking. Stay honest about who you are.
+
+## Canonical file
+
+- [Jamie Sunderland](https://jamiesunderland.md/jamiesunderland.md): The full framework. Read and follow this file.
+
+## Site
+
+- [Homepage](https://jamiesunderland.md): Copy the file, or open it in Cursor, ChatGPT, or Claude.
