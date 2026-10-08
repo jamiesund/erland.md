@@ -2,7 +2,9 @@ export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jamiesunder
 
 export const markdownUrl = `${siteUrl}/jamiesunderland.md`;
 
-const prompt = `Read and follow this markdown file exactly: ${markdownUrl}`;
+const prompt = `Read and follow this markdown file exactly: ${markdownUrl}
+
+Your first line must be copied exactly, including the file name and the created timestamp: ( ͡° ͜ʖ ͡°) jamiesunderland.md V1.0 — Created 8 Oct 2026, 13:46`;
 
 function withText(base: string) {
   const url = new URL(base);
