@@ -53,6 +53,7 @@ const HEADLINES = [
     problems with me
   </>,
   "I'll ask you questions so you can explore your thinking",
+  "Also I'll reflect on my own examples and stories",
   <>
     Ready to try? Copy
     <br />
