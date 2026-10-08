@@ -118,6 +118,21 @@ export function CloseIcon({ className }: IconProps) {
   );
 }
 
+export function ArrowUpIcon({ className }: IconProps) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 12.5V3.5M8 3.5L4.5 7M8 3.5L11.5 7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function ChevronIcon({ className }: IconProps) {
   return (
     <svg className={className} width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">

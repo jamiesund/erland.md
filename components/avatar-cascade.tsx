@@ -52,6 +52,13 @@ type ResidueFace = {
 };
 
 const RESIDUE_MAX = 20;
+const RESIDUE_HEIGHT = 180;
+const RESIDUE_HEIGHT_MOBILE = 112;
+
+function residueBandHeight() {
+  if (typeof window !== "undefined" && window.matchMedia("(max-width: 800px)").matches) return RESIDUE_HEIGHT_MOBILE;
+  return RESIDUE_HEIGHT;
+}
 const EMPTY_RESIDUE: ResidueFace[] = [];
 let residueSnapshot: ResidueFace[] = EMPTY_RESIDUE;
 let residueId = 0;
@@ -70,7 +77,7 @@ function pushResidue(count: number) {
   if (count <= 0 || residueSnapshot.length >= RESIDUE_MAX) return;
   const adding = Math.min(count, RESIDUE_MAX - residueSnapshot.length);
   const next: ResidueFace[] = [];
-  const height = 180;
+  const height = residueBandHeight();
   for (let index = 0; index < adding; index += 1) {
     residueId += 1;
     const size = 32 + Math.round(Math.random() * 52);
@@ -188,6 +195,17 @@ function ensureLoop() {
   frame = window.requestAnimationFrame(tick);
 }
 
+function trayOcclusion(root: HTMLElement) {
+  if (!window.matchMedia("(max-width: 800px)").matches) return 0;
+  const backdrop = root.closest(".feedback-backdrop");
+  if (!backdrop) return 0;
+  const modal = backdrop.querySelector(".feedback-modal");
+  if (!modal) return 0;
+  const modalBox = modal.getBoundingClientRect();
+  if (modalBox.height === 0) return 0;
+  return Math.max(0, root.getBoundingClientRect().bottom - modalBox.top);
+}
+
 function tick(now: number) {
   const dt = Math.min(0.032, (now - last) / 1000);
   last = now;
@@ -195,6 +213,7 @@ function tick(now: number) {
   for (const group of groups) {
     const width = group.root.clientWidth;
     const height = group.root.clientHeight;
+    const cover = trayOcclusion(group.root);
     const elapsed = now - group.started;
 
     for (const face of group.faces) {
@@ -231,7 +250,9 @@ function tick(now: number) {
           continue;
         }
         const lift = height * 0.34 * 0.58 ** (face.hops - 1);
-        face.vy = -Math.sqrt(2 * GRAVITY * Math.max(lift, 36));
+        const aboveTray = cover > 0 ? cover + 110 * 0.72 ** (face.hops - 1) : 0;
+        const bounce = Math.min(height * 0.92, Math.max(lift, aboveTray, 36));
+        face.vy = -Math.sqrt(2 * GRAVITY * bounce);
         face.vx += (Math.random() - 0.5) * 24;
         face.vr *= 0.96;
       }

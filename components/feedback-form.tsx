@@ -154,7 +154,7 @@ export function FeedbackForm({
     if (!replyTo) return;
     if (!emailLooksRight(replyTo)) {
       setStatus("error");
-      setError("That email doesn't look right.");
+      setError("Your email doesn't look right");
       return;
     }
 
@@ -222,7 +222,7 @@ export function FeedbackForm({
         <div className="feedback-connect">
           <h3>More on</h3>
           <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-            <LinkedInIcon />
+            <LinkedInIcon className="linkedin-icon" />
           </a>
           <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="X">
             <XIcon />
@@ -259,12 +259,6 @@ export function FeedbackForm({
             {option.label}
           </button>
         ))}
-        {choices.length > 1 ? (
-          <button className="feedback-reset" type="button" disabled={status === "sending"} onClick={() => setChoices([])}>
-            <ResetIcon />
-            Reset
-          </button>
-        ) : null}
       </div>
       <label className="feedback-detail">
         <textarea
@@ -280,9 +274,17 @@ export function FeedbackForm({
           }}
         />
       </label>
-      <button className="pill tool send done" type="submit" disabled={!ready || status === "sending"}>
-        {status === "sending" ? "Sending" : "Done"}
-      </button>
+      <div className="feedback-actions">
+        {choices.length > 1 ? (
+          <button className="feedback-reset" type="button" disabled={status === "sending"} onClick={() => setChoices([])}>
+            <ResetIcon />
+            Reset
+          </button>
+        ) : null}
+        <button className="pill tool send done" type="submit" disabled={!ready || status === "sending"}>
+          {status === "sending" ? "Sending" : "Done"}
+        </button>
+      </div>
       <label className="hp" aria-hidden="true">
         <span>Company</span>
         <input name="company" tabIndex={-1} autoComplete="off" />

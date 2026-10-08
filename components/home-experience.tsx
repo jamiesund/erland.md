@@ -2,16 +2,27 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
 import { AvatarField, AvatarResidue, releaseOneAvatar, useAvatarResidue } from "@/components/avatar-cascade";
 import { NestEgg, useNestHold } from "@/components/nest-egg";
-import { ChevronIcon, DotsIcon, LinkedInIcon, XIcon } from "@/components/icons";
+import { ArrowUpIcon, ChevronIcon, DotsIcon, LinkedInIcon, XIcon } from "@/components/icons";
 import { socialLinks } from "@/lib/links";
 import { MarkdownSelectionMenu } from "@/components/selection-menu";
 import { VersionButton, VersionLogProvider } from "@/components/brand";
 import { CopyControl, SiteHeader, useMarkdownCopy, COPIED_HOLD_MS, BANNER_EXIT_MS } from "@/components/site-header";
 
-const LINE_CAP = 99;
+const MOBILE_LINE_CAP = 49;
+const DESKTOP_LINE_CAP = 99;
+
+function subscribeMobileLayout(onStoreChange: () => void) {
+  const media = window.matchMedia("(max-width: 800px)");
+  media.addEventListener("change", onStoreChange);
+  return () => media.removeEventListener("change", onStoreChange);
+}
+
+function getMobileLayoutSnapshot() {
+  return window.matchMedia("(max-width: 800px)").matches;
+}
 const showTimingTuner = false;
 const DEFAULT_TIMING = {
   hold: 800,
@@ -71,10 +82,11 @@ export function HomeExperience({ markdown }: { markdown: string }) {
   const nest = useNestHold();
   const lines = markdown.replace(/\n$/, "").split("\n");
   const [showAll, setShowAll] = useState(false);
-  const canExpand = lines.length > LINE_CAP;
-  const hiddenCount = Math.max(lines.length - LINE_CAP, 0);
-  const headLines = canExpand ? lines.slice(0, LINE_CAP) : lines;
-  const restLines = canExpand ? lines.slice(LINE_CAP) : [];
+  const isMobile = useSyncExternalStore(subscribeMobileLayout, getMobileLayoutSnapshot, () => false);
+  const canExpand = lines.length > MOBILE_LINE_CAP;
+  const headLines = lines.slice(0, MOBILE_LINE_CAP);
+  const midLines = lines.slice(MOBILE_LINE_CAP, DESKTOP_LINE_CAP);
+  const restLines = lines.slice(DESKTOP_LINE_CAP);
   timingRef.current = resolvedTiming;
 
   useEffect(() => {
@@ -574,28 +586,34 @@ export function HomeExperience({ markdown }: { markdown: string }) {
       >
         <span className="toast-line" />
         <p>
-          {copyError
-            ? "Couldn't copy from this browser."
-            : "Paste in ChatGPT, Claude or any IDE to get started"}
+          {copyError ? (
+            "Couldn't copy from this browser."
+          ) : (
+            <>
+              Paste in ChatGPT, Claude
+              <br />
+              or where you chat with AI
+            </>
+          )}
         </p>
         <span className="toast-line" />
       </div>
 
       <section className="markdown" aria-label="Markdown file">
-        <div className="shell lines" ref={linesRef}>
+        <div className={showAll ? "shell lines is-expanded" : "shell lines"} ref={linesRef}>
           {headLines.map((line, index) => (
             <div className="line" key={index}>
               <span className="num">{index + 1}</span>
               <span className="code">{line || " "}</span>
             </div>
           ))}
-          {canExpand ? (
-            <div className={showAll ? "line-rest is-open" : "line-rest"}>
-              <div className="line-rest-grid">
-                <div className="line-rest-clip" aria-hidden={!showAll}>
-                  {restLines.map((line, index) => (
-                    <div className="line" key={LINE_CAP + index}>
-                      <span className="num">{LINE_CAP + 1 + index}</span>
+          {midLines.length > 0 ? (
+            <div className="lines-mid">
+              <div className="lines-mid-grid">
+                <div className="lines-mid-clip" aria-hidden={!showAll && isMobile}>
+                  {midLines.map((line, index) => (
+                    <div className="line" key={MOBILE_LINE_CAP + index}>
+                      <span className="num">{MOBILE_LINE_CAP + 1 + index}</span>
                       <span className="code">{line || " "}</span>
                     </div>
                   ))}
@@ -603,19 +621,32 @@ export function HomeExperience({ markdown }: { markdown: string }) {
               </div>
             </div>
           ) : null}
-          {canExpand ? <hr className={showAll ? "log-rule file-rule" : "log-rule file-rule is-collapsed"} /> : null}
+          {restLines.length > 0 ? (
+            <div className={showAll ? "line-rest is-open" : "line-rest"}>
+              <div className="line-rest-grid">
+                <div className="line-rest-clip" aria-hidden={!showAll}>
+                  {restLines.map((line, index) => (
+                    <div className="line" key={DESKTOP_LINE_CAP + index}>
+                      <span className="num">{DESKTOP_LINE_CAP + 1 + index}</span>
+                      <span className="code">{line || " "}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
           {canExpand ? (
             <button
               className={showAll ? "pill log-feedback show-all is-open" : "pill log-feedback show-all"}
               type="button"
-              aria-label={showAll ? `Hide ${hiddenCount}` : `Show ${hiddenCount} more`}
+              aria-expanded={showAll}
               onClick={() => setShowAll((open) => !open)}
             >
-              {showAll ? `Hide ${hiddenCount}` : `${hiddenCount} more`}
+              {showAll ? "Show less" : "Show all"}
               <ChevronIcon />
             </button>
           ) : null}
-          {canExpand ? <hr className={showAll ? "log-rule file-rule is-collapsed" : "log-rule file-rule"} /> : null}
+          {canExpand ? <hr className="log-rule file-rule" /> : null}
         </div>
       </section>
       <div className={residue.length === 0 ? "shell page-end is-flush" : "shell page-end"} ref={pageEndRef}>
@@ -626,7 +657,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
         <div className="feedback-connect">
           <h3>More on</h3>
           <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-            <LinkedInIcon />
+            <LinkedInIcon className="linkedin-icon" />
           </a>
           <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="X">
             <XIcon />
@@ -640,10 +671,21 @@ export function HomeExperience({ markdown }: { markdown: string }) {
         className={copyPinned || headerPinned ? "back-top is-visible" : "back-top"}
         type="button"
         onClick={scrollToTop}
+        aria-label="Back to top"
         aria-hidden={!(copyPinned || headerPinned)}
         inert={!(copyPinned || headerPinned)}
       >
-        Back to top
+        <ArrowUpIcon className="back-top-icon" />
+        <span className="back-top-label">Back to top</span>
+      </button>
+      <button
+        className={copyPinned || headerPinned ? "pill copy copy-wide mobile-nav-copy is-visible" : "pill copy copy-wide mobile-nav-copy"}
+        type="button"
+        onClick={copyFile}
+        aria-hidden={!(copyPinned || headerPinned)}
+        inert={!(copyPinned || headerPinned)}
+      >
+        <CopyControl copied={copied} />
       </button>
       <button
         className={copyPinned || headerPinned ? "float-avatar is-visible" : "float-avatar"}

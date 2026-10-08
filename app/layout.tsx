@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { SiteAnalytics } from "@/components/analytics";
 import { SiteShell } from "@/components/site-shell";
@@ -10,20 +10,28 @@ const inter = Inter({
   weight: ["300", "400", "500"],
 });
 
-const title = "Jamiesunderland.md";
+const siteName = "Jamiesunderland.md";
 const description = "Chat through your design problems with me.";
+const shareTitle =
+  "Chat through your design problems with me. I'll ask you questions so you can explore your thinking. Copy or open where you chat with AI.";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://jamiesunderland.md"),
   title: {
-    default: title,
-    template: `%s · ${title}`,
+    default: siteName,
+    template: `%s · ${siteName}`,
   },
   description,
   openGraph: {
-    title,
+    title: shareTitle,
     description,
-    siteName: title,
+    siteName,
     type: "website",
     url: "/",
     images: [
@@ -32,12 +40,13 @@ export const metadata: Metadata = {
         width: 1024,
         height: 537,
         alt: description,
+        type: "image/jpeg",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title,
+    title: shareTitle,
     description,
     images: ["/og.jpg"],
   },
