@@ -81,6 +81,7 @@ export function VersionButton() {
       type="button"
       aria-haspopup="dialog"
       aria-expanded={open}
+      data-track="Versions · Scroll nav"
       onClick={openLog}
     >
       <span>{currentVersion}</span>
@@ -157,7 +158,7 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
       >
         <div className="log-head">
           <h2 id={titleId}>Versions</h2>
-          <button className="pill log-close" type="button" aria-label="Close" onClick={onClose}>
+          <button className="pill log-close" type="button" aria-label="Close" data-track="Close · Versions" onClick={onClose}>
             <CloseIcon />
           </button>
         </div>
@@ -179,6 +180,7 @@ export function VersionLog({ open, onClose }: { open: boolean; onClose: () => vo
                 className="pill log-feedback"
                 href="/feedback"
                 scroll={false}
+                data-track="Give feedback · Versions"
                 onClick={handoff}
               >
                 Give feedback
@@ -201,6 +203,7 @@ export function Brand() {
       type="button"
       aria-haspopup="dialog"
       aria-expanded={open}
+      data-track="Versions · Header"
       onClick={openLog}
     >
       <span className="brand">Jamiesunderland.md</span>

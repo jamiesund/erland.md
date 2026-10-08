@@ -270,6 +270,7 @@ export function MarkdownSelectionMenu({
       <button
         className="pill tool"
         type="button"
+        data-track="Copy · Selection"
         onMouseDown={(event) => {
           event.preventDefault();
           pendingText.current = window.getSelection()?.toString() ?? "";
@@ -285,6 +286,7 @@ export function MarkdownSelectionMenu({
         <button
           className="pill tool"
           type="button"
+          data-track="Select all"
           onMouseDown={(event) => {
             event.preventDefault();
             onSelectAll();

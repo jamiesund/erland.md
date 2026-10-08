@@ -175,7 +175,7 @@ export function FeedbackForm({
           <div className="feedback-followup">
             <div className="feedback-sent">
               <p className="form-success">I'll follow up at {email || "jamie@example.com"}</p>
-              <button className="pill tool send done" type="button" onClick={onClose}>
+              <button className="pill tool send done" type="button" data-track="Done · Follow-up" onClick={onClose}>
                 <span>
                   <CheckIcon />
                   Done
@@ -212,6 +212,7 @@ export function FeedbackForm({
                   type="submit"
                   disabled={!email.trim() || status === "sending"}
                   aria-label={status === "sending" ? "Sending" : "Send"}
+                  data-track="Send email"
                 >
                   <ChevronIcon />
                 </button>
@@ -221,10 +222,10 @@ export function FeedbackForm({
         )}
         <div className="feedback-connect">
           <h3>More on</h3>
-          <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+          <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" data-track="LinkedIn · Feedback">
             <LinkedInIcon className="linkedin-icon" />
           </a>
-          <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="X">
+          <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="X" data-track="X · Feedback">
             <XIcon />
           </a>
         </div>
@@ -248,6 +249,7 @@ export function FeedbackForm({
               .join(" ")}
             type="button"
             aria-pressed={choices.includes(option.label)}
+            data-track={`Feedback · ${option.label}`}
             disabled={status === "sending"}
             onClick={() => {
               setChoices((current) =>
@@ -276,12 +278,12 @@ export function FeedbackForm({
       </label>
       <div className="feedback-actions">
         {choices.length > 1 ? (
-          <button className="feedback-reset" type="button" disabled={status === "sending"} onClick={() => setChoices([])}>
+          <button className="feedback-reset" type="button" data-track="Reset feedback" disabled={status === "sending"} onClick={() => setChoices([])}>
             <ResetIcon />
             Reset
           </button>
         ) : null}
-        <button className="pill tool send done" type="submit" disabled={!ready || status === "sending"}>
+        <button className="pill tool send done" type="submit" data-track="Send feedback" disabled={!ready || status === "sending"}>
           {status === "sending" ? "Sending" : "Done"}
         </button>
       </div>

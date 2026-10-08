@@ -105,20 +105,20 @@ export function SiteHeader({
       <div className="shell top-row">
         <Brand />
         <div className="actions">
-          <button className="pill copy" type="button" onClick={onCopy}>
+          <button className="pill copy" type="button" data-track="Copy · Header" onClick={onCopy}>
             <CopyControl copied={copied} iconFirst />
           </button>
           <span className="open-label">Open in</span>
           <div className="tools">
-            <a className="pill tool" href={openLinks.cursor} target="_blank" rel="noopener noreferrer">
+            <a className="pill tool" href={openLinks.cursor} target="_blank" rel="noopener noreferrer" data-track="Open in Cursor">
               <CursorIcon />
               <span>Cursor</span>
             </a>
-            <a className="pill tool" href={openLinks.chatgpt} target="_blank" rel="noopener noreferrer">
+            <a className="pill tool" href={openLinks.chatgpt} target="_blank" rel="noopener noreferrer" data-track="Open in ChatGPT">
               <ChatGptIcon />
               <span>ChatGPT</span>
             </a>
-            <a className="pill tool" href={openLinks.claude} target="_blank" rel="noopener noreferrer">
+            <a className="pill tool" href={openLinks.claude} target="_blank" rel="noopener noreferrer" data-track="Open in Claude">
               <ClaudeIcon />
               <span>Claude</span>
             </a>

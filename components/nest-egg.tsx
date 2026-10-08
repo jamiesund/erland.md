@@ -376,7 +376,7 @@ export function NestEgg() {
     >
       <div className="shell nest-hud">
         {phase === "play" || phase === "count" ? (
-          <button className="pill log-feedback" type="button" onClick={finishRound}>
+          <button className="pill log-feedback" type="button" data-track="Exit game" onClick={finishRound}>
             Exit
           </button>
         ) : (
@@ -456,10 +456,10 @@ export function NestEgg() {
           <strong>{score}</strong>
           {best != null ? <p className="nest-best">{record ? "New best" : `Best ${best}`}</p> : null}
           <div className="nest-end-actions">
-            <button className="pill done" type="button" onClick={playAgain}>
+            <button className="pill done" type="button" data-track="Play again" onClick={playAgain}>
               Play again
             </button>
-            <button className="pill log-feedback" type="button" onClick={close}>
+            <button className="pill log-feedback" type="button" data-track="Done · Game" onClick={close}>
               Done
             </button>
           </div>

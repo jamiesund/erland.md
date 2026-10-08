@@ -504,7 +504,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
       <div className={copyPinned ? "scroll-nav is-visible" : "scroll-nav"} aria-hidden={!copyPinned} inert={!copyPinned}>
         <div className="shell scroll-nav-inner">
           <VersionButton />
-          <button className="pill copy copy-wide" type="button" onClick={copyFile}>
+          <button className="pill copy copy-wide" type="button" data-track="Copy · Scroll nav" onClick={copyFile}>
             <CopyControl copied={copied} />
           </button>
         </div>
@@ -573,7 +573,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
 
       <div className="copy-bar" ref={copyBarRef}>
         <div className="shell">
-          <button className="pill copy copy-wide" type="button" onClick={copyFile}>
+          <button className="pill copy copy-wide" type="button" data-track="Copy · Copy bar" onClick={copyFile}>
             <CopyControl copied={copied} />
           </button>
         </div>
@@ -641,6 +641,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
               className={showAll ? "pill log-feedback show-all is-open" : "pill log-feedback show-all"}
               type="button"
               aria-expanded={showAll}
+              data-track={showAll ? "Show less" : "Show all"}
               onClick={() => setShowAll((open) => !open)}
             >
               {showAll ? "Show less" : "Show all"}
@@ -651,16 +652,16 @@ export function HomeExperience({ markdown }: { markdown: string }) {
         </div>
       </section>
       <div className={residue.length === 0 ? "shell page-end is-flush" : "shell page-end"} ref={pageEndRef}>
-        <Link className="pill log-feedback" href="/feedback" scroll={false}>
+        <Link className="pill log-feedback" href="/feedback" scroll={false} data-track="Give feedback · Page">
           Give feedback
           <ChevronIcon />
         </Link>
         <div className="feedback-connect">
           <h3>More on</h3>
-          <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+          <a className="pill tool" href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" data-track="LinkedIn · Home">
             <LinkedInIcon className="linkedin-icon" />
           </a>
-          <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="X">
+          <a className="pill tool" href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="X" data-track="X · Home">
             <XIcon />
           </a>
         </div>
@@ -673,6 +674,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
         type="button"
         onClick={scrollToTop}
         aria-label="Back to top"
+        data-track="Back to top"
         aria-hidden={!(copyPinned || headerPinned)}
         inert={!(copyPinned || headerPinned)}
       >
@@ -682,6 +684,7 @@ export function HomeExperience({ markdown }: { markdown: string }) {
       <button
         className={copyPinned || headerPinned ? "pill copy copy-wide mobile-nav-copy is-visible" : "pill copy copy-wide mobile-nav-copy"}
         type="button"
+        data-track="Copy · Mobile"
         onClick={copyFile}
         aria-hidden={!(copyPinned || headerPinned)}
         inert={!(copyPinned || headerPinned)}

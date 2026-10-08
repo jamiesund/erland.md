@@ -111,7 +111,7 @@ export function FeedbackModal() {
       >
         <div className="feedback-head">
           <h2 id={titleId}>{heading}</h2>
-          <button className="pill log-close" type="button" aria-label="Close" onClick={close}>
+          <button className="pill log-close" type="button" aria-label="Close" data-track="Close · Feedback" onClick={close}>
             <CloseIcon />
           </button>
         </div>
